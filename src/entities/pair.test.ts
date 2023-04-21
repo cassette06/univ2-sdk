@@ -1,6 +1,8 @@
 import { Token, WETH9, Price, CurrencyAmount } from '@uniswap/sdk-core'
 import { InsufficientInputAmountError } from '../errors'
 import { computePairAddress, Pair } from './pair'
+import { INIT_CODE_HASH, FACTORY_ADDRESS } from '../constants'
+
 
 describe('computePairAddress', () => {
   it('should correctly compute the pool address', () => {
@@ -8,6 +10,7 @@ describe('computePairAddress', () => {
     const tokenB = new Token(1, '0x6B175474E89094C44Da98b954EedeAC495271d0F', 18, 'DAI', 'DAI Stablecoin')
     const result = computePairAddress({
       factoryAddress: '0x1111111111111111111111111111111111111111',
+      initCodeHash: INIT_CODE_HASH,
       tokenA,
       tokenB
     })
@@ -21,6 +24,7 @@ describe('computePairAddress', () => {
     let tokenB = DAI
     const resultA = computePairAddress({
       factoryAddress: '0x1111111111111111111111111111111111111111',
+      initCodeHash: INIT_CODE_HASH,
       tokenA,
       tokenB
     })
@@ -29,6 +33,7 @@ describe('computePairAddress', () => {
     tokenB = USDC
     const resultB = computePairAddress({
       factoryAddress: '0x1111111111111111111111111111111111111111',
+      initCodeHash: INIT_CODE_HASH,
       tokenA,
       tokenB
     })
@@ -44,54 +49,48 @@ describe('Pair', () => {
   describe('constructor', () => {
     it('cannot be used for tokens on different chains', () => {
       expect(
-        () => new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(WETH9[3], '100'))
+        () => new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(WETH9[3], '100'), FACTORY_ADDRESS, INIT_CODE_HASH)
       ).toThrow('CHAIN_IDS')
-    })
-  })
-
-  describe('#getAddress', () => {
-    it('returns the correct address', () => {
-      expect(Pair.getAddress(USDC, DAI)).toEqual('0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5')
     })
   })
 
   describe('#token0', () => {
     it('always is the token that sorts before', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100')).token0
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).token0
       ).toEqual(DAI)
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '100')).token0
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).token0
       ).toEqual(DAI)
     })
   })
   describe('#token1', () => {
     it('always is the token that sorts after', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100')).token1
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).token1
       ).toEqual(USDC)
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '100')).token1
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).token1
       ).toEqual(USDC)
     })
   })
   describe('#reserve0', () => {
     it('always comes from the token that sorts before', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '101')).reserve0
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '101'), FACTORY_ADDRESS, INIT_CODE_HASH).reserve0
       ).toEqual(CurrencyAmount.fromRawAmount(DAI, '101'))
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100')).reserve0
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).reserve0
       ).toEqual(CurrencyAmount.fromRawAmount(DAI, '101'))
     })
   })
   describe('#reserve1', () => {
     it('always comes from the token that sorts after', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '101')).reserve1
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '101'), FACTORY_ADDRESS, INIT_CODE_HASH).reserve1
       ).toEqual(CurrencyAmount.fromRawAmount(USDC, '100'))
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100')).reserve1
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).reserve1
       ).toEqual(CurrencyAmount.fromRawAmount(USDC, '100'))
     })
   })
@@ -99,10 +98,10 @@ describe('Pair', () => {
   describe('#token0Price', () => {
     it('returns price of token0 in terms of token1', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '101'), CurrencyAmount.fromRawAmount(DAI, '100')).token0Price
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '101'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).token0Price
       ).toEqual(new Price(DAI, USDC, '100', '101'))
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '101')).token0Price
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '101'), FACTORY_ADDRESS, INIT_CODE_HASH).token0Price
       ).toEqual(new Price(DAI, USDC, '100', '101'))
     })
   })
@@ -110,16 +109,16 @@ describe('Pair', () => {
   describe('#token1Price', () => {
     it('returns price of token1 in terms of token0', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '101'), CurrencyAmount.fromRawAmount(DAI, '100')).token1Price
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '101'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).token1Price
       ).toEqual(new Price(USDC, DAI, '101', '100'))
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '101')).token1Price
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '101'), FACTORY_ADDRESS, INIT_CODE_HASH).token1Price
       ).toEqual(new Price(USDC, DAI, '101', '100'))
     })
   })
 
   describe('#priceOf', () => {
-    const pair = new Pair(CurrencyAmount.fromRawAmount(USDC, '101'), CurrencyAmount.fromRawAmount(DAI, '100'))
+    const pair = new Pair(CurrencyAmount.fromRawAmount(USDC, '101'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH)
     it('returns price of token in terms of other token', () => {
       expect(pair.priceOf(DAI)).toEqual(pair.token0Price)
       expect(pair.priceOf(USDC)).toEqual(pair.token1Price)
@@ -133,16 +132,16 @@ describe('Pair', () => {
   describe('#reserveOf', () => {
     it('returns reserves of the given token', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '101')).reserveOf(USDC)
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '101'), FACTORY_ADDRESS, INIT_CODE_HASH).reserveOf(USDC)
       ).toEqual(CurrencyAmount.fromRawAmount(USDC, '100'))
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100')).reserveOf(USDC)
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).reserveOf(USDC)
       ).toEqual(CurrencyAmount.fromRawAmount(USDC, '100'))
     })
 
     it('throws if not in the pair', () => {
       expect(() =>
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100')).reserveOf(
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '101'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).reserveOf(
           WETH9[1]
         )
       ).toThrow('TOKEN')
@@ -152,22 +151,22 @@ describe('Pair', () => {
   describe('#chainId', () => {
     it('returns the token0 chainId', () => {
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100')).chainId
+        new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).chainId
       ).toEqual(1)
       expect(
-        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '100')).chainId
+        new Pair(CurrencyAmount.fromRawAmount(DAI, '100'), CurrencyAmount.fromRawAmount(USDC, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).chainId
       ).toEqual(1)
     })
   })
   describe('#involvesToken', () => {
     expect(
-      new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100')).involvesToken(USDC)
+      new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).involvesToken(USDC)
     ).toEqual(true)
     expect(
-      new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100')).involvesToken(DAI)
+      new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).involvesToken(DAI)
     ).toEqual(true)
     expect(
-      new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100')).involvesToken(
+      new Pair(CurrencyAmount.fromRawAmount(USDC, '100'), CurrencyAmount.fromRawAmount(DAI, '100'), FACTORY_ADDRESS, INIT_CODE_HASH).involvesToken(
         WETH9[1]
       )
     ).toEqual(false)
@@ -176,7 +175,7 @@ describe('Pair', () => {
     it('getLiquidityMinted:0', async () => {
       const tokenA = new Token(3, '0x0000000000000000000000000000000000000001', 18)
       const tokenB = new Token(3, '0x0000000000000000000000000000000000000002', 18)
-      const pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, '0'), CurrencyAmount.fromRawAmount(tokenB, '0'))
+      const pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, '0'), CurrencyAmount.fromRawAmount(tokenB, '0'), FACTORY_ADDRESS, INIT_CODE_HASH)
 
       expect(() => {
         pair.getLiquidityMinted(
@@ -208,7 +207,7 @@ describe('Pair', () => {
       const tokenB = new Token(3, '0x0000000000000000000000000000000000000002', 18)
       const pair = new Pair(
         CurrencyAmount.fromRawAmount(tokenA, '10000'),
-        CurrencyAmount.fromRawAmount(tokenB, '10000')
+        CurrencyAmount.fromRawAmount(tokenB, '10000'),FACTORY_ADDRESS, INIT_CODE_HASH
       )
 
       expect(
@@ -225,7 +224,7 @@ describe('Pair', () => {
     it('getLiquidityValue:!feeOn', async () => {
       const tokenA = new Token(3, '0x0000000000000000000000000000000000000001', 18)
       const tokenB = new Token(3, '0x0000000000000000000000000000000000000002', 18)
-      const pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, '1000'), CurrencyAmount.fromRawAmount(tokenB, '1000'))
+      const pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, '1000'), CurrencyAmount.fromRawAmount(tokenB, '1000'), FACTORY_ADDRESS, INIT_CODE_HASH)
 
       {
         const liquidityValue = pair.getLiquidityValue(
@@ -266,7 +265,7 @@ describe('Pair', () => {
     it('getLiquidityValue:feeOn', async () => {
       const tokenA = new Token(3, '0x0000000000000000000000000000000000000001', 18)
       const tokenB = new Token(3, '0x0000000000000000000000000000000000000002', 18)
-      const pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, '1000'), CurrencyAmount.fromRawAmount(tokenB, '1000'))
+      const pair = new Pair(CurrencyAmount.fromRawAmount(tokenA, '1000'), CurrencyAmount.fromRawAmount(tokenB, '1000'), FACTORY_ADDRESS, INIT_CODE_HASH)
 
       const liquidityValue = pair.getLiquidityValue(
         tokenA,
